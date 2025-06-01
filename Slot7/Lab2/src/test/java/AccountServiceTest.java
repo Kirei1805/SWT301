@@ -1,10 +1,9 @@
-
 import loipt.example.AccountService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -14,37 +13,60 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AccountServiceTest {
 
-    private final AccountService accountService = new AccountService();
+    private AccountService accountService;
 
-    // 1. Test đăng ký thành công với dữ liệu hợp lệ (hardcoded)
+    @BeforeAll
+    void initAll() {
+        accountService = new AccountService();
+        System.out.println("== Initializing AccountService ==");
+    }
+
+    @AfterAll
+    void tearDownAll() {
+        System.out.println("== All tests completed ==");
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        System.out.println("→ Starting a new test case...");
+    }
+
+    @AfterEach
+    void afterEach() {
+        System.out.println("→ Finished executing test case.");
+    }
+
     @Test
+    @DisplayName("1. Successful registration with valid input")
     public void testRegisterAccountSuccess() {
         assertTrue(accountService.registerAccount("validUser", "strongPass123", "valid@example.com"));
     }
 
-    // 2. Test password ngắn hơn 7 ký tự => đăng ký thất bại
     @Test
+    @DisplayName("2. Registration fails when password is shorter than 7 characters")
     public void testRegisterAccountWithShortPassword() {
         assertFalse(accountService.registerAccount("user1", "12345", "user1@example.com"));
     }
 
-    // 3. Test email không hợp lệ
     @Test
+    @DisplayName("3. Registration fails when email is invalid")
     public void testRegisterAccountWithInvalidEmail() {
         assertFalse(accountService.registerAccount("user2", "password123", "invalid-email"));
     }
 
-    // 4. Test username null hoặc rỗng
     @Test
+    @DisplayName("4. Registration fails when username is null or empty")
     public void testRegisterAccountWithEmptyUsername() {
         assertFalse(accountService.registerAccount("", "password123", "user3@example.com"));
         assertFalse(accountService.registerAccount(null, "password123", "user3@example.com"));
     }
 
-    // 5. Test hàm isValidEmail với nhiều trường hợp đúng/sai
     @Test
+    @DisplayName("5. Email validation with multiple valid and invalid cases")
     public void testIsValidEmail() {
         assertTrue(accountService.isValidEmail("test@example.com"));
         assertTrue(accountService.isValidEmail("user.name-123@domain.co"));
@@ -54,16 +76,18 @@ public class AccountServiceTest {
         assertFalse(accountService.isValidEmail(""));
     }
 
-    // 6. Test đăng ký tài khoản dựa trên dữ liệu file CSV (data.csv)
     @Test
+    @DisplayName("6. Registration with input data from CSV file")
     public void testRegisterAccountFromCsv() throws IOException, URISyntaxException {
         URL resource = getClass().getClassLoader().getResource("data.csv");
-        assertNotNull(resource, "Không tìm thấy file data.csv");
+        assertNotNull(resource, "data.csv file not found");
         Path inputPath = Paths.get(resource.toURI());
         Reader reader = Files.newBufferedReader(inputPath);
         CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+
         List<String[]> outputRecords = new ArrayList<>();
         outputRecords.add(new String[]{"username", "password", "email", "expected", "actual", "passed"});
+
         for (CSVRecord record : csvParser) {
             String username = record.get("username");
             String password = record.get("password");
@@ -77,9 +101,7 @@ public class AccountServiceTest {
                     username, password, email, expected, actual, passed);
 
             outputRecords.add(new String[]{
-                    username,
-                    password,
-                    email,
+                    username, password, email,
                     String.valueOf(expected),
                     String.valueOf(actual),
                     String.valueOf(passed)
@@ -87,42 +109,46 @@ public class AccountServiceTest {
 
             assertEquals(expected, actual, "Test failed for username: " + username);
         }
+
         csvParser.close();
         reader.close();
+
         Path outputPath = Paths.get("target", "test-classes", "UnitTest.csv");
-        try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        try (BufferedWriter writer = Files.newBufferedWriter(outputPath,
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
+
             for (String[] row : outputRecords) {
                 csvPrinter.printRecord((Object[]) row);
             }
         }
 
-        System.out.println("Đã ghi kết quả test ra file: " + outputPath.toAbsolutePath());
+        System.out.println("Test results have been written to file: " + outputPath.toAbsolutePath());
     }
-    // Test username hợp lệ
+
     @Test
+    @DisplayName("7. Username validation with valid and invalid inputs")
     public void testIsValidUsername() {
         assertTrue(accountService.isValidUsername("user_123"));
         assertTrue(accountService.isValidUsername("UserName20"));
         assertFalse(accountService.isValidUsername(null));
         assertFalse(accountService.isValidUsername(""));
-        assertFalse(accountService.isValidUsername("ab"));          // quá ngắn
-        assertFalse(accountService.isValidUsername("this_is_a_very_long_username")); // quá dài
-        assertFalse(accountService.isValidUsername("user!@#"));    // ký tự đặc biệt không cho phép
-        assertFalse(accountService.isValidUsername("user name"));  // có dấu cách
+        assertFalse(accountService.isValidUsername("ab"));
+        assertFalse(accountService.isValidUsername("this_is_a_very_long_username"));
+        assertFalse(accountService.isValidUsername("user!@#"));
+        assertFalse(accountService.isValidUsername("user name"));
     }
-    // Test mật khẩu mạnh
+
     @Test
+    @DisplayName("8. Password strength validation")
     public void testIsStrongPassword() {
         assertTrue(accountService.isStrongPassword("Abcdef1!"));
         assertTrue(accountService.isStrongPassword("StrongPass123$"));
         assertFalse(accountService.isStrongPassword(null));
-        assertFalse(accountService.isStrongPassword("short1!"));        // < 8 ký tự
-        assertFalse(accountService.isStrongPassword("alllowercase1!")); // thiếu chữ hoa
-        assertFalse(accountService.isStrongPassword("ALLUPPERCASE1!")); // thiếu chữ thường
-        assertFalse(accountService.isStrongPassword("NoNumber!"));      // thiếu số
-        assertFalse(accountService.isStrongPassword("NoSpecial123"));   // thiếu ký tự đặc biệt
+        assertFalse(accountService.isStrongPassword("short1!"));
+        assertFalse(accountService.isStrongPassword("alllowercase1!"));
+        assertFalse(accountService.isStrongPassword("ALLUPPERCASE1!"));
+        assertFalse(accountService.isStrongPassword("NoNumber!"));
+        assertFalse(accountService.isStrongPassword("NoSpecial123"));
     }
 }
-
-
