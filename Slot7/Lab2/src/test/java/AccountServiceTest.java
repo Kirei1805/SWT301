@@ -93,7 +93,6 @@ public class AccountServiceTest {
             String password = record.get("password");
             String email = record.get("email");
             boolean expected = Boolean.parseBoolean(record.get("expected"));
-
             boolean actual = accountService.registerAccount(username, password, email);
             boolean passed = (actual == expected);
 
