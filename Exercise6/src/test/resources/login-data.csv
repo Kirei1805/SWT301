@@ -1,0 +1,114 @@
+email,password,expectedResult,testScenario
+# Valid login attempts (may not work without actual user accounts)
+student@example.com,password123,success,Potentially valid student credentials
+test@example.com,test123,success,Potentially valid test credentials
+admin@example.com,admin123,success,Potentially valid admin credentials
+
+# Empty fields test cases
+,password123,error,Empty email field
+student@example.com,,error,Empty password field
+,,error,Both fields empty
+
+# Invalid email formats
+invalid-email,password123,error,Invalid email format - no @
+invalid@,password123,error,Invalid email format - no domain
+@invalid.com,password123,error,Invalid email format - no username
+invalid.email,password123,error,Invalid email format - no @ symbol
+invalid@.com,password123,error,Invalid email format - empty domain
+invalid..email@test.com,password123,error,Invalid email format - double dots
+"invalid email@test.com",password123,error,Invalid email format - space in email
+
+# Invalid credentials
+nonexistent@example.com,wrongpassword,error,Non-existent email
+student@example.com,wrongpassword,error,Wrong password for existing email
+wrong@example.com,password123,error,Wrong email with common password
+
+# Special characters in credentials
+test+special@example.com,password123,unknown,Plus sign in email
+test.dots@example.com,password123,unknown,Dots in email username
+test-dash@example.com,password123,unknown,Dash in email username
+test_underscore@example.com,password123,unknown,Underscore in email username
+
+# Special characters in passwords
+student@example.com,Pass@word123!,unknown,Special characters in password
+test@example.com,P@ssw0rd#2023,unknown,Complex password with symbols
+admin@example.com,Strong$Pass123,unknown,Dollar sign in password
+user@example.com,Complex&Pass456,unknown,Ampersand in password
+
+# Case sensitivity tests
+Student@Example.com,password123,error,Email case sensitivity test
+STUDENT@EXAMPLE.COM,password123,error,Email uppercase test
+student@example.com,PASSWORD123,error,Password case sensitivity test
+student@example.com,Password123,error,Password mixed case test
+
+# Boundary value testing
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.com","P",.repeat(100),error,Very long email and password
+a@b.co,P1!,unknown,Very short valid email and password
+test@example.com,"password123 ",error,Password with trailing space
+" test@example.com",password123,error,Email with leading space
+
+# SQL Injection attempts
+"admin'--",password,error,SQL injection in email - comment out
+"admin' OR '1'='1",password,error,SQL injection in email - always true
+"'; DROP TABLE users; --",password,error,SQL injection in email - drop table
+admin@example.com,"admin' OR '1'='1",error,SQL injection in password
+admin@example.com,"'; DROP TABLE users; --",error,SQL injection in password - drop table
+"admin' OR 1=1#",password,error,SQL injection with hash comment
+admin@example.com,"admin' OR 1=1#",error,SQL injection in password with hash
+
+# XSS attempts
+"<script>alert('xss')</script>@example.com",password123,error,XSS attempt in email
+test@example.com,"<script>alert('xss')</script>",error,XSS attempt in password
+"javascript:alert('xss')@example.com",password123,error,JavaScript protocol in email
+
+# Common attack patterns
+admin,admin,error,Default admin credentials
+administrator,administrator,error,Default administrator credentials
+root,root,error,Default root credentials
+guest,guest,error,Default guest credentials
+test,test,error,Default test credentials
+
+# Brute force simulation data
+user1@example.com,pass1,error,Brute force attempt 1
+user1@example.com,pass2,error,Brute force attempt 2
+user1@example.com,pass3,error,Brute force attempt 3
+user2@example.com,password,error,Common password attempt 1
+user2@example.com,123456,error,Common password attempt 2
+user2@example.com,qwerty,error,Common password attempt 3
+
+# Unicode and international characters
+test@exämple.com,password123,error,Unicode in domain
+tëst@example.com,password123,error,Unicode in username
+test@example.com,pässwörd123,error,Unicode in password
+测试@example.com,password123,error,Chinese characters in email
+тест@example.com,password123,error,Cyrillic characters in email
+
+# Edge cases with whitespace
+"  test@example.com  ",password123,error,Email with surrounding spaces
+test@example.com,"  password123  ",error,Password with surrounding spaces
+"test@example.com	",password123,error,Email with tab character
+test@example.com,"password123	",error,Password with tab character
+
+# Very long attempts (potential buffer overflow tests)
+test@example.com,$(python -c 'print("A" * 1000)'),error,Very long password attempt
+$(python -c 'print("a" * 100)')@example.com,password123,error,Very long email attempt
+
+# Null and special byte attempts
+test@example.com,"password\0",error,Null byte in password
+"test\0@example.com",password123,error,Null byte in email
+test@example.com,"password\n",error,Newline in password
+"test\n@example.com",password123,error,Newline in email
+
+# Format string attacks
+test@example.com,%s%s%s%s,error,Format string attack in password
+%s%s%s%s@example.com,password123,error,Format string attack in email
+
+# Path traversal attempts
+test@example.com,../../etc/passwd,error,Path traversal in password
+../../etc/passwd@example.com,password123,error,Path traversal in email
+
+# Command injection attempts
+test@example.com,"; ls -la",error,Command injection in password
+"; ls -la"@example.com,password123,error,Command injection in email
+test@example.com,"password; cat /etc/passwd",error,Command injection with cat
+"user; whoami"@example.com,password123,error,Command injection with whoami 

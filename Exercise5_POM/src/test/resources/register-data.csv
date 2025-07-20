@@ -1,0 +1,8 @@
+firstName,lastName,email,phone,expectedResult
+John,Doe,john.doe@email.com,1234567890,success
+Jane,Smith,jane.smith@test.com,0987654321,success
+"","","","",error
+John,"",john@email.com,1234567890,success
+"",Doe,jane@email.com,1234567890,error
+John,Doe,invalid-email,1234567890,success
+John,Doe,john@email.com,"",success 
